@@ -22,4 +22,16 @@ Veritabanı SQLite, kalıcı volume: `app_data` → `/app/data/db.sqlite3`.
 3. `docker compose up -d --build`.
 4. İsterseniz önde Nginx/Caddy ile TLS ve reverse proxy kullanın; container `8000` portunu dinler.
 
+### Nginx / Caddy arkasında CSRF (403)
+
+Django, `ALLOWED_HOSTS` içindeki her ana bilgisayar için otomatik olarak `CSRF_TRUSTED_ORIGINS` üretir (`https://` ve `http://`). Üretimde `USE_PROXY_SSL` varsayılan olarak açıktır (`DEBUG=False`); vekil sunucunun isteği şu başlıklarla ilettiğinden emin olun:
+
+```nginx
+proxy_set_header Host $host;
+proxy_set_header X-Forwarded-Proto $scheme;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+```
+
+Caddy genelde bunları kendisi ekler. Özel port kullanıyorsanız `.env` içinde açık yazın: `CSRF_TRUSTED_ORIGINS=https://alanadiniz.com:8443`
+
 Güncelleme: `git pull` → `docker compose up -d --build`.

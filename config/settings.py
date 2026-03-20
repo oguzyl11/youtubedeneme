@@ -46,8 +46,28 @@ if _hosts:
 else:
     ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
+# HTTPS / reverse proxy (Nginx, Caddy, Traefik): CSRF ve güvenli çerezler için gerekli
+# https://docs.djangoproject.com/en/stable/ref/settings/#csrf-trusted-origins
+_csrf = os.environ.get("CSRF_TRUSTED_ORIGINS", "").strip()
+if _csrf:
+    CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf.split(",") if o.strip()]
+else:
+    CSRF_TRUSTED_ORIGINS = []
+    for host in ALLOWED_HOSTS:
+        if not host or host == "*":
+            continue
+        if "://" in host:
+            CSRF_TRUSTED_ORIGINS.append(host)
+        else:
+            CSRF_TRUSTED_ORIGINS.append(f"https://{host}")
+            CSRF_TRUSTED_ORIGINS.append(f"http://{host}")
+    CSRF_TRUSTED_ORIGINS = list(dict.fromkeys(CSRF_TRUSTED_ORIGINS))
 
-# Application definition
+# Varsayılan: üretimde (DEBUG=False) çoğu kurulumda TLS Nginx/Caddy arkasında; X-Forwarded-Proto gerekir
+USE_PROXY_SSL = _env_bool("USE_PROXY_SSL", not DEBUG)
+if USE_PROXY_SSL:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
