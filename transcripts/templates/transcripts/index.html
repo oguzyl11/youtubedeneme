@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>YouTube Transkript</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+        },
+      },
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/40 to-slate-100 font-sans text-slate-800 antialiased">
+  <div class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+    <header class="mb-10 text-center">
+      <h1 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">YouTube Transkript</h1>
+      <p class="mt-2 text-slate-600">Supadata.ai ile videodan metin transkripti çekin.</p>
+    </header>
+
+    <section class="rounded-2xl border border-slate-200/80 bg-white/90 p-6 shadow-lg shadow-slate-200/50 backdrop-blur sm:p-8">
+      <form
+        id="transcript-form"
+        method="post"
+        class="space-y-4"
+        action=""
+      >
+        {% csrf_token %}
+        <div>
+          <label for="id_url" class="mb-2 block text-sm font-medium text-slate-700">Video URL</label>
+          {{ form.url }}
+          {% if form.url.errors %}
+            <p class="mt-2 text-sm text-red-600">{{ form.url.errors.0 }}</p>
+          {% endif %}
+        </div>
+        <button
+          type="submit"
+          id="submit-btn"
+          class="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          Transkripti getir
+        </button>
+      </form>
+    </section>
+
+    {% if error_message %}
+      <div class="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="alert">
+        <p class="font-medium">Bir sorun oluştu</p>
+        <p class="mt-1 text-amber-800/90">{{ error_message }}</p>
+      </div>
+    {% endif %}
+
+    {% if transcript %}
+      <section class="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-md sm:p-8">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 class="text-lg font-semibold text-slate-900">Sonuç</h2>
+            <p class="mt-1 text-sm font-medium text-slate-800">{{ transcript.video_title }}</p>
+            <p class="mt-1 break-all text-xs text-slate-500">{{ transcript.url }}</p>
+          </div>
+          <button
+            type="button"
+            id="copy-btn"
+            class="shrink-0 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          >
+            Kopyala
+          </button>
+        </div>
+        <div class="mt-6 max-h-[28rem] overflow-y-auto rounded-xl bg-slate-50 p-4 text-sm leading-relaxed text-slate-800">
+          <pre id="transcript-text" class="whitespace-pre-wrap font-sans">{{ transcript.transcript_content }}</pre>
+        </div>
+      </section>
+    {% endif %}
+  </div>
+
+  <div id="loading-overlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+    <div class="flex flex-col items-center gap-4 rounded-2xl bg-white px-8 py-6 shadow-xl">
+      <div class="h-10 w-10 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" aria-hidden="true"></div>
+      <p class="text-sm font-medium text-slate-700">Transkript alınıyor…</p>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var form = document.getElementById('transcript-form');
+      var overlay = document.getElementById('loading-overlay');
+      var submitBtn = document.getElementById('submit-btn');
+      if (form && overlay) {
+        form.addEventListener('submit', function () {
+          overlay.classList.remove('hidden');
+          overlay.classList.add('flex');
+          if (submitBtn) submitBtn.disabled = true;
+        });
+      }
+      var copyBtn = document.getElementById('copy-btn');
+      var textEl = document.getElementById('transcript-text');
+      if (copyBtn && textEl) {
+        copyBtn.addEventListener('click', function () {
+          var t = textEl.textContent || '';
+          if (!navigator.clipboard) {
+            alert('Panoya kopyalama bu tarayıcıda desteklenmiyor.');
+            return;
+          }
+          navigator.clipboard.writeText(t).then(function () {
+            var prev = copyBtn.textContent;
+            copyBtn.textContent = 'Kopyalandı';
+            setTimeout(function () { copyBtn.textContent = prev; }, 2000);
+          }).catch(function () {
+            alert('Kopyalanamadı.');
+          });
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
